@@ -10,23 +10,23 @@
 <body>
 <?php if(!isset($hide_nav) || !$hide_nav): ?>
 <nav class="bottom-nav no-print">
-    <a href="index.php?page=dashboard" class="nav-item">
+    <a href="dashboard.php?page=dashboard" class="nav-item">
         <i class="fas fa-home"></i>
         <span>Home</span>
     </a>
-    <a href="index.php?page=create_bill" class="nav-item">
+    <a href="dashboard.php?page=create_bill" class="nav-item">
         <i class="fas fa-plus-circle"></i>
         <span>New Bill</span>
     </a>
-    <a href="index.php?page=bills" class="nav-item">
+    <a href="dashboard.php?page=bills" class="nav-item">
         <i class="fas fa-list"></i>
         <span>History</span>
     </a>
-    <a href="index.php?page=reports" class="nav-item">
+    <a href="dashboard.php?page=reports" class="nav-item">
         <i class="fas fa-chart-bar"></i>
         <span>Reports</span>
     </a>
-    <a href="index.php?action=logout" class="nav-item" style="color: #e74c3c;">
+    <a href="logout.php" class="nav-item" style="color: #e74c3c;">
         <i class="fas fa-sign-out-alt"></i>
         <span>Logout</span>
     </a>

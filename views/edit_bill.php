@@ -1,24 +1,35 @@
 <?php 
-require_once 'config/database.php';
-require_once 'config/auth.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/auth.php';
 requireLogin();
 
 $conn = getDBConnection();
 
-$id = $_GET['id'];
-$bill_query = $conn->query("SELECT * FROM bills WHERE id = $id");
-$bill = $bill_query->fetch_assoc();
+$id = intval($_GET['id'] ?? 0);
+if ($id <= 0) die("Invalid ID.");
+
+$stmt1 = $conn->prepare("SELECT * FROM bills WHERE id = ?");
+$stmt1->bind_param("i", $id);
+$stmt1->execute();
+$bill = $stmt1->get_result()->fetch_assoc();
 
 if (!$bill) die("Bill not found.");
 
-$items_query = $conn->query("SELECT * FROM bill_items WHERE bill_id = $id");
-$payment_query = $conn->query("SELECT * FROM payments WHERE bill_id = $id");
-$payment = $payment_query->fetch_assoc();
+$stmt2 = $conn->prepare("SELECT * FROM bill_items WHERE bill_id = ?");
+$stmt2->bind_param("i", $id);
+$stmt2->execute();
+$items_query = $stmt2->get_result();
 
-include 'views/components/header.php'; 
+$stmt3 = $conn->prepare("SELECT * FROM payments WHERE bill_id = ?");
+$stmt3->bind_param("i", $id);
+$stmt3->execute();
+$payment = $stmt3->get_result()->fetch_assoc();
+
+include __DIR__ . '/components/header.php'; 
 ?>
 
 <form id="billForm" action="api/update_bill.php" method="POST" enctype="multipart/form-data">
+    <?php echo getCSRFInput(); ?>
     <input type="hidden" name="bill_id" value="<?php echo $id; ?>">
     
     <div class="bill-paper">

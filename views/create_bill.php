@@ -1,10 +1,11 @@
 <?php 
-require_once 'config/auth.php';
+require_once __DIR__ . '/../config/auth.php';
 requireLogin();
-include 'views/components/header.php'; 
+include __DIR__ . '/components/header.php'; 
 ?>
 
 <form id="billForm" action="api/save_bill.php" method="POST" enctype="multipart/form-data">
+    <?php echo getCSRFInput(); ?>
     <div class="bill-paper">
         <div class="bill-header">
             <h3>SHRI</h3>

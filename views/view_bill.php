@@ -1,26 +1,39 @@
 <?php 
-require_once 'config/database.php';
-require_once 'config/utils.php';
-require_once 'config/auth.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/utils.php';
+require_once __DIR__ . '/../config/auth.php';
 requireLogin();
 
 $conn = getDBConnection();
 
-$id = $_GET['id'];
-$bill_query = $conn->query("SELECT * FROM bills WHERE id = $id");
-$bill = $bill_query->fetch_assoc();
+$id = intval($_GET['id'] ?? 0);
+if ($id <= 0) die("Invalid ID.");
+
+$stmt1 = $conn->prepare("SELECT * FROM bills WHERE id = ?");
+$stmt1->bind_param("i", $id);
+$stmt1->execute();
+$bill = $stmt1->get_result()->fetch_assoc();
 
 if (!$bill) {
     die("Bill not found.");
 }
 
-$items_query = $conn->query("SELECT * FROM bill_items WHERE bill_id = $id");
-$payment_query = $conn->query("SELECT * FROM payments WHERE bill_id = $id");
-$payment = $payment_query->fetch_assoc();
+$stmt2 = $conn->prepare("SELECT * FROM bill_items WHERE bill_id = ?");
+$stmt2->bind_param("i", $id);
+$stmt2->execute();
+$items_query = $stmt2->get_result();
 
-$media_query = $conn->query("SELECT * FROM bill_media WHERE bill_id = $id");
+$stmt3 = $conn->prepare("SELECT * FROM payments WHERE bill_id = ?");
+$stmt3->bind_param("i", $id);
+$stmt3->execute();
+$payment = $stmt3->get_result()->fetch_assoc();
 
-include 'views/components/header.php'; 
+$stmt4 = $conn->prepare("SELECT * FROM bill_media WHERE bill_id = ?");
+$stmt4->bind_param("i", $id);
+$stmt4->execute();
+$media_query = $stmt4->get_result();
+
+include __DIR__ . '/components/header.php'; 
 ?>
 
 <style>
@@ -37,13 +50,14 @@ include 'views/components/header.php';
     <button onclick="window.print()" class="btn-add-item" style="background: #2c3e50; color: white; border: none;">
         <i class="fas fa-print"></i> PRINT
     </button>
-    <a href="index.php?page=edit_bill&id=<?php echo $id; ?>" class="btn-add-item" style="background: #3498db; color: white; border: none; text-decoration: none; text-align: center;">
+    <a href="dashboard.php?page=edit_bill&id=<?php echo $id; ?>" class="btn-add-item" style="background: #3498db; color: white; border: none; text-decoration: none; text-align: center;">
         <i class="fas fa-edit"></i> EDIT
     </a>
     <button onclick="document.getElementById('paymentModal').style.display='block'" class="btn-add-item" style="background: #f39c12; color: white; border: none;">
         <i class="fas fa-plus"></i> ADD PAYMENT
     </button>
     <form action="api/update_payment.php" method="POST" style="margin:0;">
+        <?php echo getCSRFInput(); ?>
         <input type="hidden" name="bill_id" value="<?php echo $id; ?>">
         <input type="hidden" name="amount_to_add" value="<?php echo $payment['balance_amount']; ?>">
         <button type="submit" class="btn-add-item" style="background: #27ae60; color: white; border: none; width: 100%;">
@@ -56,6 +70,7 @@ include 'views/components/header.php';
     <div class="modal-content">
         <h3>Add Payment</h3>
         <form action="api/update_payment.php" method="POST">
+            <?php echo getCSRFInput(); ?>
             <input type="hidden" name="bill_id" value="<?php echo $id; ?>">
             <div class="bill-input-group">
                 <label>Amount to Add (₹)</label>

@@ -1,17 +1,30 @@
 <?php
 require_once '../config/database.php';
 require_once '../config/auth.php';
+
 requireLogin();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // CSRF Validation
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        die("Invalid security token.");
+    }
+
     $conn = getDBConnection();
     
-    $bill_id = $_POST['bill_id'];
+    $bill_id = intval($_POST['bill_id']);
     $amount_to_add = floatval($_POST['amount_to_add']);
     
-    $payment_query = $conn->query("SELECT * FROM payments WHERE bill_id = $bill_id");
-    $payment = $payment_query->fetch_assoc();
+    // Prepared statement for selection
+    $sel_stmt = $conn->prepare("SELECT total_amount, paid_amount FROM payments WHERE bill_id = ?");
+    $sel_stmt->bind_param("i", $bill_id);
+    $sel_stmt->execute();
+    $payment = $sel_stmt->get_result()->fetch_assoc();
     
+    if (!$payment) {
+        die("Payment record not found.");
+    }
+
     $new_paid = $payment['paid_amount'] + $amount_to_add;
     $new_balance = $payment['total_amount'] - $new_paid;
     
@@ -27,8 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->bind_param("ddsi", $new_paid, $new_balance, $status, $bill_id);
     
     if ($stmt->execute()) {
-        header("Location: ../index.php?page=view_bill&id=" . $bill_id);
+        header("Location: ../dashboard.php?page=view_bill&id=" . $bill_id);
     } else {
+        logAppError("Error updating payment for bill $bill_id");
         die("Error updating payment.");
     }
     

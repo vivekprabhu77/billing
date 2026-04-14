@@ -1,22 +1,28 @@
 <?php
 require_once 'config/database.php';
+require_once 'config/auth.php';
+requireLogin();
+
 $conn = getDBConnection();
 
 // Get current month and year
-$month = isset($_GET['month']) ? $_GET['month'] : date('m');
-$year = isset($_GET['year']) ? $_GET['year'] : date('Y');
+$month = intval(isset($_GET['month']) ? $_GET['month'] : date('m'));
+$year = intval(isset($_GET['year']) ? $_GET['year'] : date('Y'));
 
 // Month Name
 $month_name = date("F", mktime(0, 0, 0, $month, 10));
 
 // Category wise breakdown for the month
-$category_report = $conn->query("
+$stmt1 = $conn->prepare("
     SELECT category, SUM(total) as total 
     FROM bill_items 
     INNER JOIN bills ON bill_items.bill_id = bills.id 
-    WHERE MONTH(bills.date) = $month AND YEAR(bills.date) = $year
+    WHERE MONTH(bills.date) = ? AND YEAR(bills.date) = ?
     GROUP BY category
 ");
+$stmt1->bind_param("ii", $month, $year);
+$stmt1->execute();
+$category_report = $stmt1->get_result();
 
 $categories = [];
 while($row = $category_report->fetch_assoc()) {
@@ -24,22 +30,25 @@ while($row = $category_report->fetch_assoc()) {
 }
 
 // Financial Summary for the month
-$summary = $conn->query("
+$stmt2 = $conn->prepare("
     SELECT 
         SUM(total_amount) as total_revenue,
         SUM(paid_amount) as total_received,
         SUM(balance_amount) as total_pending
     FROM payments 
     INNER JOIN bills ON payments.bill_id = bills.id 
-    WHERE MONTH(bills.date) = $month AND YEAR(bills.date) = $year
-")->fetch_assoc();
+    WHERE MONTH(bills.date) = ? AND YEAR(bills.date) = ?
+");
+$stmt2->bind_param("ii", $month, $year);
+$stmt2->execute();
+$summary = $stmt2->get_result()->fetch_assoc();
 
-include 'views/components/header.php';
+include __DIR__ . '/components/header.php';
 ?>
 
 <h2 style="margin-bottom: 20px;">Monthly Report</h2>
 
-<form method="GET" action="index.php" style="margin-bottom: 30px;">
+<form method="GET" action="dashboard.php" style="margin-bottom: 30px;">
     <input type="hidden" name="page" value="reports">
     <div style="display: flex; gap: 10px;">
         <select name="month" style="flex: 1; padding: 10px; border-radius: 4px; border: 1px solid #ddd;">

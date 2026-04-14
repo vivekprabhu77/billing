@@ -1,6 +1,6 @@
 <?php
-require_once 'config/database.php';
-require_once 'config/auth.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/auth.php';
 requireLogin();
 
 $conn = getDBConnection();
@@ -12,7 +12,7 @@ $bills_query = $conn->query("
     ORDER BY b.date DESC, b.created_at DESC
 ");
 
-include 'views/components/header.php';
+include __DIR__ . '/components/header.php';
 ?>
 
 <style>
@@ -24,7 +24,7 @@ include 'views/components/header.php';
 
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
     <h2>Bill History</h2>
-    <a href="index.php?page=create_bill" style="background: var(--accent-color); color: white; padding: 10px 20px; border-radius: 20px; text-decoration: none; font-size: 0.9rem; font-weight: bold;">+ New Bill</a>
+    <a href="dashboard.php?page=create_bill" style="background: var(--accent-color); color: white; padding: 10px 20px; border-radius: 20px; text-decoration: none; font-size: 0.9rem; font-weight: bold;">+ New Bill</a>
 </div>
 
 <div class="bill-input-group" style="position: relative; margin-bottom: 25px;">
@@ -35,7 +35,7 @@ include 'views/components/header.php';
 <div id="historyList">
     <?php if ($bills_query->num_rows > 0): ?>
         <?php while($row = $bills_query->fetch_assoc()): ?>
-            <a href="index.php?page=view_bill&id=<?php echo $row['id']; ?>" style="text-decoration: none; color: inherit;">
+            <a href="dashboard.php?page=view_bill&id=<?php echo $row['id']; ?>" style="text-decoration: none; color: inherit;">
                 <div class="bill-paper" style="min-height: auto; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 6px solid <?php 
                     echo ($row['status'] == 'Paid' ? '#27ae60' : ($row['status'] == 'Partial' ? '#f1c40f' : '#e74c3c')); 
                 ?>;">
